@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+
+
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fightzone</title>
+<link href="favicon.png?v=3" rel="icon" sizes="32x32" type="image/png"/>
+<!-- Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Site CSS -->
+<link href="styles.css" rel="stylesheet"/>
+<link rel="stylesheet" href="./paywall2.css">
+
+<style>
+    .card__timer.is-live{display:inline-flex;align-items:center;gap:6px}
+    .card__timer.is-live .live-dot{width:8px;height:8px;border-radius:50%;background:#ff3b3b;display:inline-block}
+  </style>
+<!-- Request page styles (kept here for stability) -->
+<style>
+    .page{ display:none; }
+    .page.is-active{ display:block; }
+
+    .request-wrap{
+      min-height: calc(100vh - 120px);
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+      padding: 56px 0 80px;
+    }
+
+    .request-card{
+      width: 100%;
+      max-width: 100%;
+      background: rgba(10,12,16,.72);
+      border: 1px solid rgba(96,165,250,.25);
+      border-radius: 12px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.55);
+      overflow:hidden;
+    }
+
+    .request-head{
+      padding: 22px 26px 18px;
+      border-bottom: 1px solid rgba(96,165,250,.18);
+    }
+
+    .request-title{
+      margin:0;
+      font-size: 22px;
+      font-weight: 700;
+      color:#eaf0ff;
+    }
+
+    .request-sub{
+      margin: 6px 0 0;
+      font-size: 13px;
+      color: rgba(234,240,255,.65);
+    }
+
+    .request-body{
+      padding: 22px 26px 26px;
+    }
+
+    .form-row{ margin-top: 14px; }
+
+    .form-label{
+      display:block;
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(234,240,255,.85);
+      margin-bottom: 8px;
+    }
+
+    .form-input{
+      width:100%;
+      height: 44px;
+      padding: 0 14px;
+      background: #0b0e14;
+      border: 1px solid rgba(96,165,250,.18);
+      border-radius: 6px;
+      color:#fff;
+      outline:none;
+      font-family: Inter, system-ui, sans-serif;
+      font-size: 14px;
+      transition: border-color .2s ease, background .2s ease;
+    }
+
+    .form-input::placeholder{ color: rgba(255,255,255,.35); }
+
+    .form-input:focus{
+      border-color: rgba(96,165,250,.55);
+      background:#0d111a;
+    }
+
+    .form-help{
+      margin-top: 8px;
+      font-size: 12px;
+      color: rgba(234,240,255,.55);
+    }
+
+    .type-row{
+      display:flex;
+      gap: 22px;
+      align-items:center;
+      margin-top: 8px;
+      color: rgba(234,240,255,.75);
+      font-size: 14px;
+    }
+
+    .type-row input{ transform: translateY(1px); }
+
+    .request-actions{ margin-top: 22px; }
+
+    .request-btn{
+      width:100%;
+      height: 44px;
+      border-radius: 6px;
+      border: 0;
+      cursor:pointer;
+      background: rgba(37,99,235,.35);
+      color:#eaf0ff;
+      font-weight: 600;
+      font-family: Inter, system-ui, sans-serif;
+      transition: background .2s ease, transform .05s ease;
+    }
+
+    .request-btn:hover{ background: rgba(37,99,235,.5); }
+    .request-btn:active{ transform: translateY(1px); }
+  
+    .request-stack{
+      width: 100%;
+      max-width: 760px;
+      display:flex;
+      flex-direction:column;
+      gap: 28px;
+      margin: 0 auto;
+      min-width:0;
+    }
+</style>
+<style>
+    /* CRITICAL FALLBACK (if styles.css fails to load) */
+    *,*::before,*::after{box-sizing:border-box}
+    html,body{margin:0;padding:0;overflow-x:hidden}
+    body{background:#070a12;color:#eaf0ff;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    .stream-player-box { position: relative; width:100%; height:100%; }
+
+   .iframe-fallback{
+   position:absolute;
+   inset:0;
+   background:#000;
+   z-index:5;
+    }
+  .stream-player-box iframe{
+   position:absolute;
+   inset:0;
+   width:100%;
+   height:100%;
+   border:0;
+   }
+    /* Hide stream overlay by default even without external CSS */
+    /* Hide stream overlay by default even without external CSS */
+    .stream-overlay{display:none;position:fixed;top:var(--topbar-h, 64px);left:0;right:0;bottom:0;background:#000;z-index:15000;}
+    .stream-overlay.active{display:flex}
+    .stream-player-box{position:relative;width:100%;height:100%}
+
+    /* Placeholder must cover the video (hide stream) */
+    .stream-placeholder{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:rgba(0,0,0,.85);color:#fff;text-align:center;padding:24px;z-index:6}
+    .stream-placeholder.is-on{display:flex}
+    /* ===== MOBILE LANDSCAPE HARD FIX ===== */
+@media (max-width: 768px) {
+  .stream-overlay.active{
+    position: fixed;
+    inset: 0;
+    top: 0 !important;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: calc(var(--vvh, 1vh) * 100);
+    z-index: 15000;
+  }
+
+  .stream-main,
+  .stream-video,
+  .stream-player-box{
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    min-height: 0;
+    border-radius: 0;
+  }
+
+  .stream-player-box iframe,
+  .stream-player-box video{
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
+  .stream-info-bar{
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) and (orientation: landscape) {
+  html.stream-open,
+  body.stream-open{
+    width: 100%;
+    height: 100vh;
+    overflow: hidden !important;
+  }
+
+  .topbar,
+  .promo-track{
+    display: none !important;
+  }
+
+  .stream-overlay.active{
+    display: flex;
+    flex-direction: row;
+    inset: 0;
+    top: 0 !important;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  .stream-main{
+    width: 68%;
+    height: 100%;
+    min-width: 0;
+  }
+
+  .stream-chat{
+    display: flex !important;
+    width: 32%;
+    height: 100%;
+    min-width: 0;
+    flex-direction: column;
+  }
+
+  .stream-video,
+  .stream-player-box{
+    width: 100%;
+    height: 100%;
+  }
+
+  .stream-player-box iframe,
+  .stream-player-box video{
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+
+@media (min-width: 769px){
+  .stream-fs-btn{
+    display:none;
+  }
+}
+
+body.stream-open{
+  overflow:hidden;
+  height:100vh;
+  touch-action:none;
+}
+</style>
+<style>
+/* Live label inside card timer */
+.liveDotSmall{
+  display:inline-block;
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:#ff3b3b;
+  margin-right:6px;
+  transform: translateY(-1px);
+}
+/* Hide arrows for everyone */
+.live-arrow{
+  display:none;
+}
+
+/* Show arrows only if html has is-admin */
+html.is-admin .live-arrow{
+  display:inline-block;
+}
+</style>
+<script type="text/javascript" data-cfasync="false">
+/*<![CDATA[/* */
+(function(){var m=window,w="d283187f7a343ed02eb5e07dca828114",z=[["siteId",654+959+393*323+728+5173392],["minBid",0],["popundersPerIP","0"],["delayBetween",0],["default",false],["defaultPerDay",0],["topmostLayer","auto"]],b=["d3d3LmFudGlhZGJsb2Nrc3lzdGVtcy5jb20vblRJSy9PQUZmb0Eva2NvcmUuanM=","ZDNjb2Q4MHRobjdxbmQuY2xvdWRmcm9udC5uZXQvbWluay1hbGwubWluLmpz","d3d3LnVxYW5ycGNydHMuY29tL2lORFVaL1dHT2hxYy9jY29yZS5qcw==","d3d3LmpuYXhtY25senNub3guY29tL2NpbmstYWxsLm1pbi5qcw=="],p=-1,q,x,i=function(){clearTimeout(x);p++;if(b[p]&&!(1806525468000<(new Date).getTime()&&1<p)){q=m.document.createElement("script");q.type="text/javascript";q.async=!0;var f=m.document.getElementsByTagName("script")[0];q.src="https://"+atob(b[p]);q.crossOrigin="anonymous";q.onerror=i;q.onload=function(){clearTimeout(x);m[w.slice(0,16)+w.slice(0,16)]||i()};x=setTimeout(i,5E3);f.parentNode.insertBefore(q,f)}};if(!m[w]){try{Object.freeze(m[w]=z)}catch(e){}i()}})();
+/*]]>/* */
+</script>
+<script src="https://pl29835044.effectivecpmnetwork.com/df/e4/ce/dfe4ced4b348adef76246741bf6b3100.js"></script>
+</head>
+<body class="fz-loading-events">
+<script type="text/javascript">
+    aclib.runAutoTag({
+        zoneId: 'ynga6gpjzi',
+    });
+</script>
+
+<div class="stream-overlay" id="streamOverlay">
+
+<div class="stream-main">
+<div class="stream-video">
+
+  <div class="stream-player-box">
+
+    <div class="stream-placeholder" id="streamPlaceholder">
+      <div class="ph-title" id="phTitle">This event is not live yet</div>
+      <div class="ph-timer" id="phTimer">--</div>
+      <div class="ph-sub" id="phSub">Starting soon</div>
+    </div>
+
+    <button class="stream-fs-btn" id="btnVideoFullscreen" type="button">⛶</button>
+     
+
+  <div id="adminSrcBox" style="display:none; position:absolute; top:10px; right:10px; z-index:20; background:rgba(0,0,0,.75); padding:10px; border-radius:8px; max-width:360px;">
+
+  <div style="font-size:12px; color:#fff; margin-bottom:6px;">SRC override</div>
+
+  <input
+    id="adminSrcInput"
+    type="text"
+    placeholder="https://example.com/embed/..."
+    style="width:260px; max-width:100%;"
+  >
+
+  <div style="margin-top:8px; display:flex; gap:8px;">
+    <button id="adminSrcApply" type="button">Apply</button>
+    <button id="adminSrcReset" type="button">Reset</button>
+  </div>
+
+  
+  <div style="font-size:12px; color:#fff; margin:10px 0 6px;">Date override</div>
+
+  <input
+    id="adminDateInput"
+    type="datetime-local"
+    style="width:260px; max-width:100%;"
+  >
+
+  <div style="margin-top:8px; display:flex; gap:8px;">
+    <button id="adminDateApply" type="button">Apply date</button>
+    <button id="adminDateReset" type="button">Reset date</button>
+  </div>
+
+</div>
+</div>
+
+</div>
+<div class="stream-info-bar">
+<div class="stream-title" id="streamTitle"></div>
+<div class="stream-meta" id="streamMeta"></div>
+</div>
+</div>
+
+<div class="stream-chat">
+<div class="chat-header">
+      chat <span class="chat-status">● connected</span>
+
+  <div class="chat-drag-handle" id="chatDragHandle" aria-hidden="true"></div>
+</div>
+<div class="chat-body" id="chatBody">
+
+</div>
+<div class="chat-input">
+<div id="adminAliasBar" class="admin-alias-bar" style="display:none;">
+  <div class="admin-alias-bar__title">Send as</div>
+
+  <div class="admin-alias-list" id="adminAliasList">
+    <button type="button" class="admin-alias-btn admin-alias-btn--reset" data-alias="">✕</button>
+    <button type="button" class="admin-alias-btn is-active" data-alias="Aheht2001">Aheht2001</button>
+    <button type="button" class="admin-alias-btn" data-alias="uderp">uderp</button>
+    <button type="button" class="admin-alias-btn" data-alias="zorokyd">zorokyd</button>
+    <button type="button" class="admin-alias-btn" data-alias="t4yl">t4yl</button>
+    <button type="button" class="admin-alias-btn" data-alias="steeleydan888">steeleydan888</button>
+    <button type="button" class="admin-alias-btn" data-alias="Sami">Sami</button>
+  </div>
+</div>
+<form class="chat-form" id="chatForm" autocomplete="off">
+    <input id="chatMessage" type="text" placeholder="Type a message…" maxlength="300" />
+        <button id="chatSend">
+         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <path
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      d="M22 2 11 13"
+    />
+    <path
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      d="M22 2 15 22 11 13 2 9 22 2Z"
+    />
+  </svg>
+        </button>
+  </form>
+  <div class="chat-hint" id="chatHint">Login to chat.</div>
+</div>
+</div>
+</div>
+
+
+<div class="promo-track">
+  <span class="promo-text">
+    BECOME PART OF FZPV JOIN DISCORD FOR ACCESS TO THE BIGGEST UPCOMING SPORTING EVENTS, INCLUDING THE WORLD CUP, UFC, BOXING, AND MORE
+  </span>
+  <span class="promo-text">
+    BECOME PART OF FZPV JOIN DISCORD FOR ACCESS TO THE BIGGEST UPCOMING SPORTING EVENTS, INCLUDING THE WORLD CUP, UFC, BOXING, AND MORE
+  </span>
+  <span class="promo-text">
+    BECOME PART OF FZPV JOIN DISCORD FOR ACCESS TO THE BIGGEST UPCOMING SPORTING EVENTS, INCLUDING THE WORLD CUP, UFC, BOXING, AND MORE
+  </span>
+</div>
+
+<header class="topbar">
+  <div class="container topbar__inner">
+    <div class="topbar__left">
+      <div class="topbar__brand">
+        <img alt="FZ" src="FZi-logo.png" class="fz-logo"/>
+        <span class="brand__name">Fightzone</span>
+      </div>
+
+<div class="topbar__nav-wrap">
+<nav class="topbar__nav">
+<a class="nav__item nav-main active" data-page="main" href="#">Main</a>
+<a class="nav__item nav-discord" href="https://discord.gg/ctRCGkUhM5" rel="noopener noreferrer" target="_blank">Discord</a>
+<a class="nav__item nav-faq" data-page="faq" href="#">FAQ</a>
+</nav>
+</div>
+
+<div class="auth-actions">
+  <button class="auth-btn auth-btn--login" id="btnLogin" type="button">Login</button>
+  <button class="auth-btn auth-btn--logout" id="btnRegister" type="button">Sign up</button>
+</div>
+
+</div>
+</div>
+</header>
+
+
+<div class="auth-modal" id="authModal" aria-hidden="true">
+  <div class="auth-modal__backdrop" data-auth-close="1"></div>
+
+  <div class="auth-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+    <button class="auth-modal__close" type="button" aria-label="Close" data-auth-close="1">×</button>
+
+    
+    <div class="auth-card" id="authLoginCard">
+      <div class="auth-card__head">
+        <h2 class="auth-card__title" id="authModalTitle">Welcome back!</h2>
+        <div class="auth-card__sub">Sign in to your account</div>
+      </div>
+
+      <div class="auth-card__body">
+        <form id="loginForm" autocomplete="on">
+          <div class="auth-field">
+            <label class="auth-label" for="loginEmail">Username or Email</label>
+            <div class="auth-input">
+              <span class="auth-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M4 6.5h16v11H4v-11Z" stroke="currentColor" stroke-width="2" />
+                  <path d="M4 7l8 6 8-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <input id="loginEmail" name="email" type="email" placeholder="you@example.com" autocomplete="email" required />
+            </div>
+          </div>
+
+          <div class="auth-field">
+            <label class="auth-label" for="loginPassword">Password</label>
+            <div class="auth-input">
+              <span class="auth-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M7 10V8a5 5 0 0 1 10 0v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M6.5 10.5h11V20h-11v-9.5Z" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </span>
+              <input id="loginPassword" name="password" type="password" placeholder="••••••••" autocomplete="current-password" required />
+            </div>
+          </div>
+
+          <button class="auth-primary" type="submit">Sign in</button>
+        </form>
+
+        <div class="auth-divider">
+          <span>or login with</span>
+        </div>
+
+        <div class="auth-oauth">
+          <button
+           type="button"
+           class="auth-oauth__btn auth-oauth__btn--discord"
+           id="btnLoginDiscord"
+           aria-label="Continue with Discord"
+           >
+           <span class="oauth-ic" aria-hidden="true">
+             <img src="discord.png" alt="" width="22" height="22">
+           </span>
+           <span class="oauth-text">Discord</span>
+          </button>
+        </div>
+
+
+        <div class="auth-foot">
+          <span>Lost your password?</span>
+          <a class="auth-link" href="#" id="btnRecover">Reset password</a>
+        </div>
+      </div>
+    </div>
+
+    
+<div class="auth-card" id="authRegisterCard" hidden>
+  <div class="auth-card__head">
+    <h2 class="auth-card__title">Welcome!</h2>
+    <div class="auth-card__sub">Register a new account</div>
+  </div>
+
+  <div class="auth-card__body">
+    <form id="registerForm" autocomplete="on">
+      <div class="auth-grid-2">
+        <div class="auth-field">
+          <label class="auth-label" for="regUsername">Username</label>
+          <div class="auth-input">
+            <span class="auth-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M20 21v-1.2c0-2.3-2.7-4.3-8-4.3s-8 2-8 4.3V21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </span>
+            <input id="regUsername" name="username" type="text" placeholder="Username" autocomplete="username" required />
+          </div>
+        </div>
+
+        <div class="auth-field">
+          <label class="auth-label" for="regEmail">Email</label>
+          <div class="auth-input">
+            <span class="auth-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M4 6.5h16v11H4v-11Z" stroke="currentColor" stroke-width="2" />
+                <path d="M4 7l8 6 8-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <input id="regEmail" name="email" type="email" placeholder="you@example.com" autocomplete="email" required />
+          </div>
+        </div>
+
+        <div class="auth-field">
+          <label class="auth-label" for="regPassword">Password</label>
+          <div class="auth-input">
+            <span class="auth-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M7 10V8a5 5 0 0 1 10 0v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M6.5 10.5h11V20h-11v-9.5Z" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </span>
+            <input id="regPassword" name="password" type="password" placeholder="••••••••" autocomplete="new-password" required />
+          </div>
+        </div>
+
+        <div class="auth-field">
+          <label class="auth-label" for="regPassword2">Confirm password</label>
+          <div class="auth-input">
+            <span class="auth-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M7 10V8a5 5 0 0 1 10 0v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M6.5 10.5h11V20h-11v-9.5Z" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </span>
+            <input id="regPassword2" name="password2" type="password" placeholder="••••••••" autocomplete="new-password" required />
+          </div>
+        </div>
+      </div>
+
+      <button class="auth-primary" type="submit">Register</button>
+    </form>
+
+    <div class="auth-divider">
+      <span>or register with</span>
+    </div>
+
+    <div class="auth-oauth">
+     <button
+       type="button"
+       class="auth-oauth__btn auth-oauth__btn--discord"
+       id="btnRegisterDiscord"
+       aria-label="Continue with Discord"
+       >
+       <span class="oauth-ic" aria-hidden="true">
+        <img src="discord.png" alt="" width="22" height="22">
+       </span>
+       <span class="oauth-text">Discord</span>
+      </button>
+    </div>
+
+
+    <div class="auth-foot">
+      <span>Already have an account?</span>
+      <a class="auth-link" href="#" id="btnBackToLogin">Sign in</a>
+    </div>
+  </div>
+</div>
+
+
+  </div>
+</div>
+
+<main class="container">
+
+<div class="page is-active" id="page-main">
+
+<section class="jump-section-wrap">
+
+<h2 class="section__title">Jump to section</h2>
+<div class="jump-section" id="jumpSection">
+  <button class="jump-card" data-jump-target="ufcCards">UFC</button>
+  <button class="jump-card" data-jump-target="basketballCards">Basketball</button>
+  <button class="jump-card" data-jump-target="wrestlingCards">Wrestling</button>
+  <button class="jump-card" data-jump-target="motorsportCards">Motorsport</button>
+  <button class="jump-card" data-jump-target="footballCards">Football</button>
+  <button class="jump-card" data-jump-target="hockeyCards">Ice Hockey</button>
+  <button class="jump-card" data-jump-target="dartsCards">Darts</button>
+  <button class="jump-card" data-jump-target="americanFootballCards">American Football</button>
+  <button class="jump-card" data-jump-target="baseballCards">Baseball</button>
+  <button class="jump-card" data-jump-target="streams247Cards">24/7 Streams</button>
+</div>
+
+</section>
+
+<section class="section">
+  <h2 class="section__title section__title--live">
+    <span class="liveDot"></span>
+    Live
+  </h2>
+
+  <div class="noLiveBox">
+    No events are live right now. Scroll down to see what's on later.
+  </div>
+
+  <div class="cards-wrap">
+    <button aria-label="Scroll left" class="cards-arrow cards-arrow--left">‹</button>
+
+    <div class="cards cards--1-wide live-cards" id="liveCards"></div>
+
+    <button aria-label="Scroll right" class="cards-arrow cards-arrow--right">›</button>
+  </div>
+</section>
+
+<!--   UFC  -->
+<section class="section">
+<h2 class="section__title">Combat sports</h2>
+<div class="cards-wrap">
+<button aria-label="Scroll left" class="cards-arrow cards-arrow--left">‹</button>
+<div class="cards cards--1-wide" id="combatCards">
+
+</div>
+<button aria-label="Scroll right" class="cards-arrow cards-arrow--right">›</button>
+</div>
+</section>
+
+
+
+<section class="section">
+  <h2 class="section__title">Football</h2>
+
+  <div class="cards-wrap">
+    <button aria-label="Scroll left" class="cards-arrow cards-arrow--left">‹</button>
+
+    <div class="cards cards--1-wide" id="footballCards"></div>
+
+    <button aria-label="Scroll right" class="cards-arrow cards-arrow--right">›</button>
+  </div>
+</section>
+
+
+
+
+<section class="section">
+  <h2 class="section__title">Basketball</h2>
+  <div class="cards-wrap">
+    <button aria-label="Scroll left" class="cards-arrow cards-arrow--left">‹</button>
+
+    <div class="cards cards--1-wide" id="basketballCards"></div>
+
+    <button aria-label="Scroll right" class="cards-arrow cards-arrow--right">›</button>
+  </div>
+</section>
+
+<section class="section">
+  <h2 class="section__title">Wrestling</h2>
+
+  <div class="cards-wrap">
+    <button aria-label="Scroll left" class="cards-arrow cards-arrow--left">‹</button>
+
+    <div class="cards cards--1-wide" id="wrestlingCards"></div>
+
+    <button aria-label="Scroll right" class="cards-arrow cards-arrow--right">›</button>
+  </div>
+</section>
+
+<section class="section">
+  <h2 class="section__title">Motorsport</h2>
+
+  <div class="cards-wrap">
+    <button aria-label="Scroll left" class="cards-arrow cards-arrow--left">‹</button>
+
+    <div class="cards cards--1-wide" id="motorsportCards"></div>
+
+    <button aria-label="Scroll right" class="cards-arrow cards-arrow--right">›</button>
+  </div>
+</section>
+
+<section class="section">
+  <h2 class="section__title">Ice Hockey</h2>
+
+  <div class="cards-wrap">
+    <button aria-label="Scroll left" class="cards-arrow cards-arrow--left">‹</button>
+
+    <div class="cards cards--1-wide" id="hockeyCards"></div>
+
+    <button aria-label="Scroll right" class="cards-arrow cards-arrow--right">›</button>
+  </div>
+
+</section>
+
+<section class="section">
+  <h2 class="section__title">Darts</h2>
+
+  <div class="cards-wrap">
+    <button class="cards-arrow cards-arrow--left">‹</button>
+
+    <div class="cards cards--1-wide" id="dartsCards"></div>
+
+    <button class="cards-arrow cards-arrow--right">›</button>
+  </div>
+</section>
+
+<section class="section">
+  <h2 class="section__title">American Football</h2>
+
+  <div class="cards-wrap">
+    <button class="cards-arrow cards-arrow--left">‹</button>
+
+    <div class="cards cards--1-wide" id="americanFootballCards"></div>
+
+    <button class="cards-arrow cards-arrow--right">›</button>
+  </div>
+</section>
+
+<section class="section">
+  <h2 class="section__title">Baseball</h2>
+
+  <div class="cards-wrap">
+    <button class="cards-arrow cards-arrow--left">‹</button>
+
+    <div class="cards cards--1-wide" id="baseballCards"></div>
+
+    <button class="cards-arrow cards-arrow--right">›</button>
+  </div>
+</section>
+
+<section class="section">
+  <h2 class="section__title">24/7 Streams</h2>
+
+  <div class="cards-wrap">
+    <button class="cards-arrow cards-arrow--left">‹</button>
+
+    <div class="cards cards--1-wide" id="streams247Cards"></div>
+
+    <button class="cards-arrow cards-arrow--right">›</button>
+  </div>
+</section>
+
+</div>
+
+<div class="page" id="page-vip">
+
+  <section class="access-wrap">
+
+    <div class="access-features">
+      <div class="access-features__head">
+        <h2>Access Features</h2>
+      </div>
+
+      <div class="access-features__grid">
+
+        <div class="access-feature">
+          <span class="access-check">✓</span>
+          <div>
+            <h3>Stream Compatibility</h3>
+            <p>Works smoothly with most players and devices</p>
+          </div>
+        </div>
+
+        <div class="access-feature">
+          <span class="access-check">✓</span>
+          <div>
+            <h3>Request Priority</h3>
+            <p>Custom stream requests are handled faster</p>
+          </div>
+        </div>
+
+        <div class="access-feature">
+          <span class="access-check">✓</span>
+          <div>
+            <h3>No Ads</h3>
+            <p>Cleaner viewing without unnecessary interruptions</p>
+          </div>
+        </div>
+
+        <div class="access-feature">
+          <span class="access-check">✓</span>
+          <div>
+            <h3>Stable Delivery</h3>
+            <p>Optimized stream routing for more reliable playback</p>
+          </div>
+        </div>
+
+        <div class="access-feature">
+          <span class="access-check">✓</span>
+          <div>
+            <h3>Low Delay Mode</h3>
+            <p>Reduced stream delay compared to standard sources</p>
+          </div>
+        </div>
+
+        <div class="access-feature">
+          <span class="access-check">✓</span>
+          <div>
+            <h3>Extra 24/7 Channels</h3>
+            <p>Additional always-on sports channels included</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="access-plans">
+
+      <div class="access-plan">
+        <h2>3 months</h2>
+        <p class="access-plan__sub">Short-term access with full features</p>
+
+        <div class="access-price">
+          <span>$6</span>
+          <small>/ 3 months</small>
+        </div>
+
+        <div class="access-actions">
+          
+          <button class="access-btn access-btn--crypto" type="button" data-plan="3m-crypto">
+            Pay with crypto
+          </button>
+
+        </div>
+      </div>
+
+      <div class="access-plan">
+        <h2>6 months</h2>
+        <p class="access-plan__sub">Maximum value for long-term access</p>
+
+        <div class="access-price">
+          <span>$10</span>
+          <small>/ 6 months</small>
+        </div>
+
+        <div class="access-actions">
+
+          <button class="access-btn access-btn--crypto" type="button" data-plan="12m-crypto">
+            Pay with crypto
+          </button>
+
+        </div>
+      </div>
+
+    </div>
+
+  </section>
+
+</div>
+
+<div class="page" id="page-request">
+<div class="request-wrap">
+<div class="request-stack">
+<div class="request-card">
+<div class="request-head">
+<h2 class="request-title">Request</h2>
+<p class="request-sub">Tell us what event you want to watch.</p>
+</div>
+<div class="request-body">
+<form id="requestForm">
+<div class="form-row">
+<label class="form-label" for="reqEvent">Event name</label>
+<input class="form-input" id="reqEvent" name="event" placeholder="UFC / Boxing / Football..." type="text">
+<div class="form-help">Example: “UFC 326”, “Fury vs Joshua”, “NFL Week 1”.</div>
+</div>
+<div class="form-row">
+<label class="form-label" for="reqLink">Link (optional)</label>
+<input class="form-input" id="reqLink" name="link" placeholder="https://..." type="url"/>
+</div>
+<div class="form-row">
+<label class="form-label">Type</label>
+<div class="type-row">
+<label><input checked="" name="type" type="radio" value="ufc"/> UFC</label>
+<label><input name="type" type="radio" value="boxing"/> Boxing</label>
+<label><input name="type" type="radio" value="other"/> Other</label>
+</div>
+</div>
+<div class="request-actions">
+<button class="request-btn" type="submit">Send request</button>
+</div>
+</form>
+</div>
+</div>
+<div class="request-card">
+<div class="request-head">
+<h1 class="request-title">How it works</h1>
+<p class="request-sub">
+          1) Send a request<br/>
+          2) We check availability<br/>
+          3) If possible — we add it<br/><br/>
+          VIP members get priority.
+        </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="page" id="page-archive">
+<div class="archive-empty">
+<div class="archive-icon">
+<svg fill="none" height="28" viewbox="0 0 24 24" width="28">
+<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"></circle>
+<line stroke="currentColor" stroke-linecap="round" stroke-width="2" x1="12" x2="12" y1="10" y2="16"></line>
+<circle cx="12" cy="7" fill="currentColor" r="1.5"></circle>
+</svg>
+</div>
+<div class="archive-text">Recordings of past events will be shown here</div>
+</div>
+</div>
+<div class="page" id="page-discord"></div>
+
+<div class="page" id="page-faq">
+  <div class="faq-wrap">
+    <div class="faq-list">
+
+      <div class="faq-item">
+        <button class="faq-question" type="button">
+          <span>I have black screen, what do i do?</span>
+          <span class="faq-plus">+</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer__inner">
+            <ul class="faq-list-text">
+              <li>Wait 5-10 seconds, the stream didn't load.</li>
+              <li>Dont watch it in Safari browser, use Google</li>
+              <li>If this doesn't work, that means you cannot watch it in your country. Use VPN or mobile internet.</li>
+              <li>If nothing for above works and you see "Could not play video" that means we are making some fixes</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" type="button">
+          <span>How do I cancel my subscription?</span>
+          <span class="faq-plus">+</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer__inner">
+            <ul class="faq-list-text">
+              <li>Open a ticket in Discord and send us your email.</li>
+              <li>If you canceled the subscription you will still have access to  the end of the month</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" type="button">
+          <span>The website/stream is lagging very bad</span>
+          <span class="faq-plus">+</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer__inner">
+            <ul class="faq-list-text">
+              <li>Bad internet connection.</li>
+              <li>Open the link in browser. If you clicked on it in Discord, you are watching it from Discord preview, you are technically not on the website.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" type="button">
+          <span>What do I get with VIP?</span>
+          <span class="faq-plus">+</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer__inner">
+            VIP gives access to more streams and extra perks depending on the selected plan, including premium events and other member benefits.
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" type="button">
+          <span>When i click something on the stream it takes me to another website</span>
+          <span class="faq-plus">+</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer__inner">
+            This is an ad. Download Adblocker.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+
+<footer class="footer">
+  <div class="footer__inner">
+    <div class="footer__left">
+      <img src="fz2.png" alt="Fightzone" class="footer__logo">
+    </div>
+
+    <div class="footer__center">
+      Built with love and passion
+    </div>
+
+    <div class="footer__right">
+      <a href="https://discord.gg/ctRCGkUhM5" target="_blank" rel="noopener noreferrer">
+        <img src="discord.png" alt="Discord" class="footer__discord">
+      </a>
+    </div>
+  </div>
+</footer>
+<!-- Crypto Question Modal -->
+<div id="cryptoModal" class="crypto-modal"></div>
+</main>
+
+<!--  Question  -->
+<div class="fz-toast" id="fzToast">
+  <div class="fz-toast__top">
+    <div class="fz-toast__title">Problems?</div>
+
+    <div style="display:flex; align-items:center; gap:10px;">
+      <div id="fzToastNever" style="font-size:12px; cursor:pointer; opacity:0.7;">
+        Never show again
+      </div>
+
+      <div class="fz-toast__close" id="fzToastClose">✕</div>
+    </div>
+  </div>
+
+  <div class="fz-toast__text">
+    We might have a solution in 
+    <span class="fz-link" id="goFAQ">FAQ</span> 
+    or in 
+    <a href="https://discord.gg/ctRCGkUhM5" target="_blank" class="fz-link">Discord</a>.
+  </div>
+</div>
+
+
+<script>
+  window.FZ_API_BASE = "https://worker-orcin-chi.vercel.app";
+</script>
+<script src="https://worker-orcin-chi.vercel.app/api/client.js"></script>
+<script src="./D3Hf5Xi8tTyw.js?v=3"></script>
+<script src="./D3Ghnlo7D4f.js?v=3"></script>
+<script src="./D3Hf5Xi8iTyw.js?v=3"></script>
+<script src="./AuR4l64fve34.js"></script>
+<script src="./CuR4t78ght78.js"></script>
+<script src="./PuR4I23dse90.js"></script>
+
+<script>
+  window.FZPaywall.initPaywall({ containerSelector: ".stream-player-box" });
+</script>
+</body>
+</html>
